@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuickPoll</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg: #f0f4f8;
+      --primary: #2563eb;
+      --accent: #a5b4fc;
+      --dark: #1e293b;
+    }
+  </style>
+</head>
+<body class="bg-[var(--bg)] min-h-screen flex items-center justify-center p-6">
+
+  <div class="w-full max-w-lg bg-white p-6 rounded-2xl shadow-md space-y-6">
+    <h1 class="text-3xl font-bold text-center text-[var(--primary)]">🗳️ QuickPoll</h1>
+
+    <div class="space-y-2">
+      <input id="poll-question" type="text" placeholder="Enter your poll question..."
+        class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring focus:ring-[var(--accent)]"/>
+      <div id="options" class="space-y-2"></div>
+      <button onclick="addOption()"
+        class="text-[var(--primary)] underline text-sm">+ Add Option</button>
+    </div>
+
+    <button onclick="createPoll()"
+      class="w-full bg-[var(--primary)] text-white py-2 rounded-lg font-bold hover:bg-blue-700">Create Poll</button>
+
+    <div id="poll-display" class="hidden space-y-4">
+      <h2 id="display-question" class="text-xl font-semibold text-[var(--dark)]"></h2>
+      <ul id="vote-options" class="space-y-2"></ul>
+      <button onclick="resetPoll()" class="text-sm text-red-600 underline">Reset Poll</button>
+    </div>
+  </div>
+
+  <script>
+    let optionsCount = 0;
+    let pollData = {
+      question: "",
+      options: []
+    };
+
+    function addOption() {
+      const id = `option-${optionsCount++}`;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.placeholder = "Option text";
+      input.className = "w-full p-2 rounded border border-gray-300";
+      input.dataset.id = id;
+      document.getElementById("options").appendChild(input);
+    }
+
+    function createPoll() {
+      const question = document.getElementById("poll-question").value.trim();
+      if (question.length < 3) return alert("Question is too short.");
+      
+      const inputElements = document.querySelectorAll("#options input");
+      const options = [];
+      inputElements.forEach((el) => {
+        const text = el.value.trim();
+        if (text) options.push({ text, votes: 0 });
+      });
+
+      if (options.length < 2) return alert("Add at least 2 options.");
+
+      pollData = { question, options };
+      localStorage.setItem("quickpoll", JSON.stringify(pollData));
+      showPoll();
+    }
+
+    function showPoll() {
+      const poll = JSON.parse(localStorage.getItem("quickpoll"));
+      if (!poll) return;
+
+      document.getElementById("poll-display").classList.remove("hidden");
+      document.getElementById("display-question").textContent = poll.question;
+
+      const list = document.getElementById("vote-options");
+      list.innerHTML = "";
+
+      poll.options.forEach((opt, index) => {
+        const li = document.createElement("li");
+        li.className = "flex justify-between items-center bg-[var(--accent)] p-3 rounded-lg";
+
+        const name = document.createElement("span");
+        name.textContent = `${opt.text} (${opt.votes} votes)`;
+
+        const voteBtn = document.createElement("button");
+        voteBtn.textContent = "Vote";
+        voteBtn.className = "bg-[var(--primary)] text-white px-4 py-1 rounded";
+        voteBtn.onclick = () => {
+          poll.options[index].votes++;
+          localStorage.setItem("quickpoll", JSON.stringify(poll));
+          showPoll();
+        };
+
+        li.appendChild(name);
+        li.appendChild(voteBtn);
+        list.appendChild(li);
+      });
+    }
+
+    function resetPoll() {
+      if (confirm("Reset this poll?")) {
+        localStorage.removeItem("quickpoll");
+        location.reload();
+      }
+    }
+
+    // Auto-show if exists
+    window.onload = () => {
+      if (localStorage.getItem("quickpoll")) {
+        showPoll();
+      }
+    };
+  </script>
+
+</body>
+</html>
